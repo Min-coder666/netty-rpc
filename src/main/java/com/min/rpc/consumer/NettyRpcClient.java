@@ -4,16 +4,19 @@ import com.min.common.JsonUtil;
 import com.min.common.LogUtil;
 import com.min.rpc.RpcClient;
 import com.min.rpc.RpcRequest;
-import com.min.rpc.common.JsonRpcSerializer;
-import com.min.rpc.common.RpcEncoder;
+import com.min.rpc.common.JsonRpcEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -44,8 +47,11 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
-                                .addFirst(new RpcEncoder(RpcRequest.class,new JsonRpcSerializer()))
-                                .addLast(new StringDecoder())
+                                .addLast(new LengthFieldPrepender(4))
+                                .addLast(new StringEncoder(StandardCharsets.UTF_8))
+                                .addLast(new JsonRpcEncoder())
+                                .addLast(new LengthFieldBasedFrameDecoder(1024, 0, 4, 0, 4))
+                                .addLast(new StringDecoder(StandardCharsets.UTF_8))
                                 .addLast(new ChannelInboundHandlerAdapter(){
                             @Override
                             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
