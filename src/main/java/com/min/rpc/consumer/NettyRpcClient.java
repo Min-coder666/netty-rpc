@@ -17,18 +17,15 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * @author wangmin
  * @date 2024/7/13 23:40
  */
 public class NettyRpcClient implements RpcClient, Callable<String> {
-    private final static ExecutorService executorService = Executors
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final static ExecutorService executorService =
+            new ThreadPoolExecutor(12,20,60,TimeUnit.SECONDS,new SynchronousQueue<>());
     private String result;
 
     private Channel channel;
