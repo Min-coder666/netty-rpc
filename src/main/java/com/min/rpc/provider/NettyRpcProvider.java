@@ -4,6 +4,8 @@ import com.min.common.JsonUtil;
 import com.min.common.LogUtil;
 import com.min.rpc.RpcProvider;
 import com.min.rpc.RpcRequest;
+import com.min.rpc.common.GzipDecoder;
+import com.min.rpc.common.GzipEncoder;
 import com.min.rpc.common.JsonRpcDecoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -54,11 +56,11 @@ public class NettyRpcProvider implements RpcProvider {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
-                                .addLast(new LengthFieldBasedFrameDecoder(1024, 0, 4, 0, 4))
-                                .addLast(new StringDecoder(CharsetUtil.UTF_8))
+                                .addLast(new LengthFieldBasedFrameDecoder(4104, 0, 8, 0, 8))
+                                .addLast(new GzipDecoder())
                                 .addLast(new JsonRpcDecoder())
-                                .addLast(new LengthFieldPrepender(4))
-                                .addLast(new StringEncoder(StandardCharsets.UTF_8))
+                                .addLast(new LengthFieldPrepender(8))
+                                .addLast(new GzipEncoder())
                                 .addLast(new ChannelInboundHandlerAdapter(){
                                     @Override
                                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

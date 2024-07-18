@@ -1,9 +1,11 @@
-package com.min.rpc.consumer;
+package com.min.rpc.client;
 
 import com.min.common.JsonUtil;
 import com.min.common.LogUtil;
 import com.min.rpc.RpcClient;
 import com.min.rpc.RpcRequest;
+import com.min.rpc.common.GzipDecoder;
+import com.min.rpc.common.GzipEncoder;
 import com.min.rpc.common.JsonRpcEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -25,7 +27,8 @@ import java.util.concurrent.*;
  */
 public class NettyRpcClient implements RpcClient, Callable<String> {
     private final static ExecutorService executorService =
-            new ThreadPoolExecutor(12,20,60,TimeUnit.SECONDS,new SynchronousQueue<>());
+            Executors.newCachedThreadPool();
+//            new ThreadPoolExecutor(12,20,60,TimeUnit.SECONDS,new SynchronousQueue<>());
     private String result;
 
     private Channel channel;
@@ -44,11 +47,11 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
-                                .addLast(new LengthFieldPrepender(4))
-                                .addLast(new StringEncoder(StandardCharsets.UTF_8))
+                                .addLast(new LengthFieldPrepender(8))
+                                .addLast(new GzipEncoder())
                                 .addLast(new JsonRpcEncoder())
-                                .addLast(new LengthFieldBasedFrameDecoder(1024, 0, 4, 0, 4))
-                                .addLast(new StringDecoder(StandardCharsets.UTF_8))
+                                .addLast(new LengthFieldBasedFrameDecoder(4104, 0, 8, 0, 8))
+                                .addLast(new GzipDecoder())
                                 .addLast(new ChannelInboundHandlerAdapter(){
                             @Override
                             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -97,9 +100,5 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
             clock.wait();
         }
         return result;
-    }
-
-    public void setRequest(RpcRequest request) {
-        this.request = request;
     }
 }
