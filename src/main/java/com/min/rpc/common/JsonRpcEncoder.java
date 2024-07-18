@@ -4,6 +4,7 @@ import com.min.common.JsonUtil;
 import com.min.rpc.RpcRequest;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.util.internal.StringUtil;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ public class JsonRpcEncoder extends MessageToMessageEncoder<RpcRequest> {
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, RpcRequest request, List<Object> list) throws Exception {
         String json = JsonUtil.parseJsonString(request);
-        list.add(json);
+        if(!StringUtil.isNullOrEmpty(json))
+            list.add(json);
     }
 }

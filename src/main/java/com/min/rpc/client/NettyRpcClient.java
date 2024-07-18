@@ -17,6 +17,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import sun.rmi.runtime.Log;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
@@ -30,6 +31,8 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
             Executors.newCachedThreadPool();
 //            new ThreadPoolExecutor(12,20,60,TimeUnit.SECONDS,new SynchronousQueue<>());
     private String result;
+
+    private boolean wait = true;
 
     private Channel channel;
 
@@ -56,7 +59,7 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
                             @Override
                             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                                 synchronized (clock){
-                                    result = msg.toString();
+                                    result = (String) msg;
                                     clock.notify();
                                 }
                             }
@@ -80,10 +83,11 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
         }
     }
 
-    public <T> T call(String methodName, Object[] args,Class<T> clazz) throws InterruptedException, ExecutionException {
+    public <T> T call(String methodName, Object[] args,Class<T> clazz,boolean isWait) throws InterruptedException, ExecutionException, TimeoutException {
         request = new RpcRequest();
         request.setMethodName(methodName);
         request.setParameters(args);
+        this.wait = isWait;
         Class[] paraType = new Class[args.length];
         for (int i = 0; i < paraType.length; i++) {
             paraType[i] = args[i].getClass();
@@ -96,9 +100,11 @@ public class NettyRpcClient implements RpcClient, Callable<String> {
     @Override
     public String call() throws Exception {
         channel.writeAndFlush(request);
-        synchronized (clock){
-            clock.wait();
-        }
+        this.result = null;
+        if(wait)
+            synchronized (clock){
+                clock.wait();
+            }
         return result;
     }
 }

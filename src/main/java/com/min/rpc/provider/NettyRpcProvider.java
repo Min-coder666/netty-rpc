@@ -18,9 +18,11 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -64,7 +66,9 @@ public class NettyRpcProvider implements RpcProvider {
                                 .addLast(new ChannelInboundHandlerAdapter(){
                                     @Override
                                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                                        ctx.writeAndFlush(invoke(msg));
+                                        Object resp = invoke(msg);
+                                        if(Objects.nonNull(resp))
+                                            ctx.writeAndFlush(resp);
                                     }
                                 });
                     }
@@ -100,7 +104,7 @@ public class NettyRpcProvider implements RpcProvider {
             return JsonUtil.parseJsonString(object);
         } catch (Exception e) {
             LogUtil.log("invoke method-"+methodName+" fail ");
-            throw new RuntimeException(e);
+            return null;
         }
     }
 

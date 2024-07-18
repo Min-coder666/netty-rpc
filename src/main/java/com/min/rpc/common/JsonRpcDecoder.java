@@ -1,9 +1,13 @@
 package com.min.rpc.common;
 
 import com.min.common.JsonUtil;
+import com.min.common.LogUtil;
 import com.min.rpc.RpcRequest;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.internal.StringUtil;
+
+import java.util.Objects;
 
 /**
  * @author wangmin
@@ -15,6 +19,7 @@ public class JsonRpcDecoder extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         String jsonStr = (String) msg;
         RpcRequest request = JsonUtil.parseObject(jsonStr,RpcRequest.class);
-        ctx.fireChannelRead(request);
+        if(Objects.nonNull(request))
+            ctx.fireChannelRead(request);
     }
 }
